@@ -35,7 +35,7 @@ __credits__ = ["Costas Tyfoxylos, Daan de Goede"]
 __license__ = 'Apache Software License 2.0'
 __maintainer__ = 'Costas Tyfoxylos, Daan de Goede'
 __email__ = '<ctyfoxylos@schubergphilis.com>, <ddegoede@schubergphilis.com>'
-__status__ = 'Development' # "Prototype", "Development", "Production".
+__status__ = 'Development'  # "Prototype", "Development", "Production".
 
 
 # This is the main prefix used for logging
