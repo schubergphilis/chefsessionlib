@@ -31,7 +31,9 @@ import hashlib
 import logging
 import re
 import textwrap
+from typing import Union, Dict
 
+import requests
 import rsa
 from requests import Request, Session
 from rsa import transform
@@ -62,7 +64,9 @@ CHUNK_SIZE = 60
 
 
 class ChefSession(Session):
+    """Implements a chef server authentication scheme on a requests Session."""
 
+    # pylint: disable=too-many-arguments
     def __init__(self,
                  user_id,
                  private_key_contents,
@@ -106,17 +110,41 @@ class ChefSession(Session):
     # def _get_chef_settings_by_ruby():
 
     @property
-    def authentication_version(self):
+    def authentication_version(self) -> str:
+        """The authentication version to use for the server.
+
+        Returns:
+            The authenticated version provided to the constructor. Defaults to '1.0'.
+
+        """
         return self._authentication_version
 
     @authentication_version.setter
-    def authentication_version(self, value):
+    def authentication_version(self, value: str) -> None:
+        """Set the authentication version after validating it from a list of supported ones.
+
+        Args:
+            value: The version string.
+
+        Returns:
+            None
+
+        """
         if value not in VALID_AUTHENTICATION_VERSIONS:
-            raise InvalidAuthenticationVersion(
-                f'authentication version {value} is not in supported versions: {", ".join(VALID_AUTHENTICATION_VERSIONS)}!')
+            raise InvalidAuthenticationVersion(f'Version {value} is not a supported authentication version.'
+                                               f'Supported versions: "{VALID_AUTHENTICATION_VERSIONS}"')
         self._authentication_version = value
 
-    def _update_with_default_headers(self, user_agent):
+    def _update_with_default_headers(self, user_agent: str) -> None:
+        """Updates the session headers with default headers for all calls.
+
+        Args:
+            user_agent: The user agent string.
+
+        Returns:
+            None
+
+        """
         default_headers = {'X-Chef-Version': self.server_version,
                            'Accept': 'application/json',
                            'Content-Type': 'application/json',
@@ -124,47 +152,120 @@ class ChefSession(Session):
         self.headers.update(default_headers)
 
     @staticmethod
-    def _validate_private_key(contents):
+    def _validate_private_key(contents: bytes) -> rsa.PrivateKey:
+        """Validates the contents provided as a valid rsa private key.
+
+        Args:
+            contents: The contents of a private key.
+
+        Returns:
+            The rsa.PrivateKey object of the valid contents
+
+        Raises:
+            InvalidPrivateKey if the contents cannot be loaded as a valid rsa.PrivateKey.
+
+        """
         try:
             key = rsa.PrivateKey.load_pkcs1(contents)
         except Exception:
-            raise InvalidPrivateKey('Something went wrong with importing PEM file!')
+            raise InvalidPrivateKey('Something went wrong with importing PEM file!') from None
         return key
 
     @property
-    def user_id(self):
+    def user_id(self) -> str:
+        """The user id provided."""
         return self._user_id
 
     @property
-    def canonical_user_id(self):
+    def canonical_user_id(self) -> str:
+        """The canonical user id.
+
+        Depending on the authentication version a different representation of the provided user id is calculated.
+        For authentication version 1.1 the provided user id gets its digest hashed with sha1 and the result is b64
+        encoded and then decoded to utf-8.
+
+        Returns:
+            A string of the appropriate representation of the user id based on the authentication version used.
+
+        """
         if self.authentication_version == '1.1':
             return base64.b64encode(hashlib.sha1(self.user_id.encode(ENCODING)).digest()).decode(ENCODING)
         return self.user_id
 
     @property
-    def hashing_method(self):
+    def hashing_method(self) -> str:
+        """The name of the hashing method to be used according to the requested authentication method.
+
+        Returns:
+            The name of the method.
+
+        """
         if self.authentication_version == '1.3':
             return 'sha256'
         return 'sha1'
 
     @property
-    def _hashing_method(self):
+    def _hashing_method(self) -> Union[hashlib.sha1, hashlib.sha256]:
+        """The hashlib method according to the chosen authentication version.
+
+        It is returned as a property so its usage is a little nicer since this would return a callable of the method
+        required which would need to be called first and then passed the arguments.
+        Making this a property makes its usage nicer like
+            `self._hashing_method(data).digest()`
+        instead of
+            `self._hashing_method()(data).digest()`
+        if this was set a normal method.
+
+        Returns:
+            The appropriate hashing method of hashlib according to the authentication version as a callable.
+
+        """
         return getattr(hashlib, self.hashing_method)
 
-    def _digest_and_encode(self, data):
-        """Create hash, b64 encode the digest, and split every 60 char if data more than that."""
+    def _digest_and_encode(self, data: str) -> str:
+        """Create hash, b64 encode the digest, and split every 60 char if data more than that.
+
+        Args:
+            data: The text to encode.
+
+        Returns:
+            A list of CHUNK_SIZE items.
+
+        """
         if not isinstance(data, bytes):
             data = data.encode(ENCODING)
         b64 = base64.b64encode(self._hashing_method(data).digest()).decode(ENCODING)
         return '\n'.join(textwrap.wrap(b64, CHUNK_SIZE))
 
     @staticmethod
-    def get_current_timestamp():
+    def get_current_timestamp() -> datetime:
+        """The current timestamp.
+
+        Returns:
+            The current timestamp with the appropriate format.
+
+        """
         datetime_format = '%Y-%m-%dT%H:%M:%SZ'
         return datetime.datetime.utcnow().strftime(datetime_format)
 
     @staticmethod
-    def canonical_path(path):
+    def canonical_path(path) -> str:
+        """Enforces the rules for the canonical path.
+
+        The rules of the canonical path are:
+            The authentication method does not support consecutive slashes so those are replace with a single one
+                if present.
+            Only the url portion of a path is used for the authentication so the parameters part is discarded
+            If the path is more than one character (/ is a valid path to request) then any possible trailing slashes
+                are removed.
+
+        Args:
+            path: The path requested.
+
+        Returns:
+            The canonical path according to the rules.
+
+        """
         canonical_path_regex = re.compile(r'/+')
         path = path.split('?')[0]
         path = canonical_path_regex.sub('/', path)
@@ -172,14 +273,31 @@ class ChefSession(Session):
             path = path.rstrip('/')
         return path
 
-    def _sign_header(self):
+    def _sign_header(self) -> str:
+        """The appropriate sign header for the authenticated method used.
+
+        Returns:
+            The appropriate sign header for the authenticated method used.
+
+        """
         sign_header = f'version={self.authentication_version}'
         if self.authentication_version == '1.3':
             return sign_header
         return f'algorithm={self.hashing_method};{sign_header}'
 
-    def _get_chef_request(self, method, path, hashed_body, timestamp):
-        """Return the canonical request string."""
+    def _get_chef_request(self, method, path, hashed_body, timestamp) -> bytes:
+        r"""Calculates a '\n' concatenated byte string of the appropriate headers based on the authentication version.
+
+        Args:
+            method: The HTTP verb of the method to use.
+            path: The path on the server requested.
+            hashed_body: The hashed body according to the authentication version chosen.
+            timestamp: The timestamp of the request in the appropriate format.
+
+        Returns:
+            The byte string of the request headers in the appropriate format.
+
+        """
         headers = {}
         # the following headers dict requires to be an ordered dict (python >= 3.7)
         # as the dict is signed. So the order of the keys cannot be changed.
@@ -200,7 +318,16 @@ class ChefSession(Session):
                        'X-Ops-Server-API-Version': '1'}
         return '\n'.join([f'{key}:{value}' for key, value in headers.items()]).encode()
 
-    def _get_signed_headers(self, chef_request):
+    def _get_signed_headers(self, chef_request) -> Dict:
+        """Signs the constructed headers according to the authentication version used.
+
+        Args:
+            chef_request: The canonical request constructed by the request components.
+
+        Returns:
+            A dictionary of indexed authorization headers with the parts of the signature.
+
+        """
         signed = ''
         if self.authentication_version in ['1.0', '1.1']:
             padded = rsa.pkcs1._pad_for_signing(chef_request, 256)  # noqa
@@ -213,7 +340,16 @@ class ChefSession(Session):
         return {f'X-Ops-Authorization-{index}': segment
                 for index, segment in enumerate(textwrap.wrap(signed_b64, CHUNK_SIZE), 1)}
 
-    def _authenticate_request(self, request):
+    def _authenticate_request(self, request) -> Request:
+        """Intercepted request of the session that gets enriched with the authentication mechanism.
+
+        Args:
+            request: The request of the user.
+
+        Returns:
+            The enriched request with the authentication according to the version set.
+
+        """
         timestamp = self.get_current_timestamp()
         body = self._digest_and_encode(request.body or '')
         chef_request = self._get_chef_request(request.method,
@@ -232,9 +368,21 @@ class ChefSession(Session):
         request.headers.update(auth_headers)
         return request
 
+    #  pylint: disable=too-many-locals
     def request(self, method, url, params=None, data=None, headers=None, cookies=None, files=None, auth=None,
                 timeout=None, allow_redirects=True, proxies=None, hooks=None, stream=None, verify=None, cert=None,
-                json=None, ):
+                json=None, ) -> requests.Response:
+        """Verbatim copy of the request method of requests.Session.
+
+        Hijacks the request, applies the authentication headers and checks the response status code for success.
+
+        Returns:
+            The response object if the status code is not 401
+
+        Raises:
+            InvalidAuthentication if the status code is set to 401.
+
+        """
         req = Request(method=method.upper(), url=url, headers=headers, files=files, data=data or {}, json=json,
                       params=params or {}, auth=auth, cookies=cookies, hooks=hooks)
         prep = self.prepare_request(req)

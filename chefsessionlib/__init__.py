@@ -46,5 +46,5 @@ assert __version__
 assert ChefSession
 
 assert InvalidPrivateKey
-assert  InvalidAuthentication
+assert InvalidAuthentication
 assert InvalidAuthenticationVersion
