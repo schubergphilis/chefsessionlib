@@ -27,15 +27,15 @@ Main code for chefsessionlib.
 
 import logging
 
-__author__ = '''Costas Tyfoxylos <ctyfoxylos@schubergphilis.com>'''
-__docformat__ = '''google'''
-__date__ = '''18-01-2024'''
-__copyright__ = '''Copyright 2024, Costas Tyfoxylos'''
-__credits__ = ["Costas Tyfoxylos"]
-__license__ = '''Apache Software License 2.0'''
-__maintainer__ = '''Costas Tyfoxylos'''
-__email__ = '''<ctyfoxylos@schubergphilis.com>'''
-__status__ = '''Development'''  # "Prototype", "Development", "Production".
+__author__ = 'Costas Tyfoxylos <ctyfoxylos@schubergphilis.com>, Daan de Goede <ddegoede@schubergphilis.com>'
+__docformat__ = 'google'
+__date__ = '18-01-2024'
+__copyright__ = 'Copyright 2024, Costas Tyfoxylos, Daan de Goede'
+__credits__ = ["Costas Tyfoxylos, Daan de Goede"]
+__license__ = 'Apache Software License 2.0'
+__maintainer__ = 'Costas Tyfoxylos, Daan de Goede'
+__email__ = '<ctyfoxylos@schubergphilis.com>, <ddegoede@schubergphilis.com>'
+__status__ = 'Development' # "Prototype", "Development", "Production".
 
 
 # This is the main prefix used for logging
