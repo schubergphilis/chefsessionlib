@@ -83,33 +83,6 @@ class ChefSession(Session):
         self._private_key = self._validate_private_key(private_key_contents)
         self._update_with_default_headers(user_agent)
 
-    # @classmethod
-    # def from_pem_file(cls, username, pem_path):
-    #     contents = open(path).read()
-    #     # username, key_path = ChefSession._parse_configuration(contents)
-    #     return cls(username, contents)
-    #
-    # @classmethod
-    # def from_configuratipon_file(cls, username, path):
-    #     contents = open(path).read()
-    #     # username, key_path = ChefSession._parse_configuration(contents)
-    #     return cls(username, contents)
-    #
-    # @classmethod
-    # def autoconfigure(cls):
-    #
-    # @staticmethod
-    # def _get_configuration_file_path():
-    #     # seach for  knife.rb or config.rb depending on os checking all paths
-    #
-    #
-    # @staticmethod
-    # def _parse_configuration():
-    #     return username, key_path
-    #
-    # @staticmethod
-    # def _get_chef_settings_by_ruby():
-
     @property
     def authentication_version(self) -> str:
         """The authentication version to use for the server.
