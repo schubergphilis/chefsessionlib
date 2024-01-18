@@ -75,39 +75,13 @@ class ChefSession(Session):
                  api_version=1,
                  user_agent=USER_AGENT):
         super().__init__()
+        self._logger = logging.getLogger(f'{LOGGER_BASENAME}.{self.__class__.__name__}')
         self._user_id = user_id
         self.server_version = client_version
         self.authentication_version = authentication_version
         self.api_version = api_version
         self._private_key = self._validate_private_key(private_key_contents)
         self._update_with_default_headers(user_agent)
-
-    # @classmethod
-    # def from_pem_file(cls, username, pem_path):
-    #     contents = open(path).read()
-    #     # username, key_path = ChefSession._parse_configuration(contents)
-    #     return cls(username, contents)
-    #
-    # @classmethod
-    # def from_configuratipon_file(cls, username, path):
-    #     contents = open(path).read()
-    #     # username, key_path = ChefSession._parse_configuration(contents)
-    #     return cls(username, contents)
-    #
-    # @classmethod
-    # def autoconfigure(cls):
-    #
-    # @staticmethod
-    # def _get_configuration_file_path():
-    #     # seach for  knife.rb or config.rb depending on os checking all paths
-    #
-    #
-    # @staticmethod
-    # def _parse_configuration():
-    #     return username, key_path
-    #
-    # @staticmethod
-    # def _get_chef_settings_by_ruby():
 
     @property
     def authentication_version(self) -> str:
@@ -149,6 +123,7 @@ class ChefSession(Session):
                            'Accept': 'application/json',
                            'Content-Type': 'application/json',
                            'User-Agent': user_agent}
+        self._logger.debug(f'Updating session headers with default headers: "{default_headers}"')
         self.headers.update(default_headers)
 
     @staticmethod
@@ -316,6 +291,8 @@ class ChefSession(Session):
                        'X-Ops-Timestamp': timestamp,
                        'X-Ops-UserId': self.canonical_user_id,
                        'X-Ops-Server-API-Version': '1'}
+        self._logger.debug(f'Authentication version is set to {self.authentication_version}, '
+                           f'constructed headers: "{headers}"')
         return '\n'.join([f'{key}:{value}' for key, value in headers.items()]).encode()
 
     def _get_signed_headers(self, chef_request) -> Dict:
@@ -337,8 +314,13 @@ class ChefSession(Session):
         if self.authentication_version == '1.3':
             signed = rsa.sign(chef_request, self._private_key, 'SHA-256')
         signed_b64 = base64.b64encode(signed).decode()
-        return {f'X-Ops-Authorization-{index}': segment
-                for index, segment in enumerate(textwrap.wrap(signed_b64, CHUNK_SIZE), 1)}
+        self._logger.debug(f'Authentication version is set to {self.authentication_version}, '
+                           f'\n\tsigned payload calculated: "{signed}"\n\t'
+                           f'b64 encoded to: "{signed_b64}"')
+        headers = {f'X-Ops-Authorization-{index}': segment
+                   for index, segment in enumerate(textwrap.wrap(signed_b64, CHUNK_SIZE), 1)}
+        self._logger.debug(f'Constructed authenticated headers: "{headers}"')
+        return headers
 
     def _authenticate_request(self, request) -> Request:
         """Intercepted request of the session that gets enriched with the authentication mechanism.
@@ -366,6 +348,7 @@ class ChefSession(Session):
         }
         auth_headers.update(signed_headers)
         request.headers.update(auth_headers)
+        self._logger.debug(f'Updated request headers with: "{auth_headers}"')
         return request
 
     #  pylint: disable=too-many-locals
@@ -394,5 +377,5 @@ class ChefSession(Session):
         prep = self._authenticate_request(prep)  # we are hijacking and enriching our request here before sending.
         resp = self.send(prep, **send_kwargs)
         if resp.status_code == 401:
-            raise InvalidAuthentication
+            raise InvalidAuthentication(resp.text)
         return resp
