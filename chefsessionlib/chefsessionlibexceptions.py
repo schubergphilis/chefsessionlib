@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # File: chefsessionlibexceptions.py
 #
-# Copyright 2024 Costas Tyfoxylos
+# Copyright 2024 Costas Tyfoxylos, Daan de Goede
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -34,3 +34,15 @@ __license__ = 'Apache Software License 2.0'
 __maintainer__ = 'Costas Tyfoxylos, Daan de Goede'
 __email__ = '<ctyfoxylos@schubergphilis.com>, <ddegoede@schubergphilis.com>'
 __status__ = 'Development'  # "Prototype", "Development", "Production".
+
+
+class InvalidAuthentication(Exception):
+    """"""
+
+
+class InvalidPrivateKey(Exception):
+    """"""
+
+
+class InvalidAuthenticationVersion(Exception):
+    """"""
