@@ -37,12 +37,12 @@ __status__ = 'Development'  # "Prototype", "Development", "Production".
 
 
 class InvalidAuthentication(Exception):
-    """"""
+    """The authentication did not succeed."""
 
 
 class InvalidPrivateKey(Exception):
-    """"""
+    """The content is not a valid str of a rsa private key."""
 
 
 class InvalidAuthenticationVersion(Exception):
-    """"""
+    """The version provided is not supported."""
