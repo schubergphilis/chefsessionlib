@@ -36,7 +36,9 @@ import rsa
 from requests import Request, Session
 from rsa import transform
 
-from .chefsessionlibexceptions import InvalidPrivateKey, InvalidAuthenticationVersion
+from .chefsessionlibexceptions import (InvalidPrivateKey,
+                                       InvalidAuthentication,
+                                       InvalidAuthenticationVersion)
 
 __author__ = 'Costas Tyfoxylos <ctyfoxylos@schubergphilis.com>, Daan de Goede <ddegoede@schubergphilis.com>'
 __docformat__ = 'google'
@@ -145,14 +147,15 @@ class ChefSession(Session):
             return 'sha256'
         return 'sha1'
 
-    def _get_hashing_method(self):
+    @property
+    def _hashing_method(self):
         return getattr(hashlib, self.hashing_method)
 
     def _digest_and_encode(self, data):
         """Create hash, b64 encode the digest, and split every 60 char if data more than that."""
         if not isinstance(data, bytes):
             data = data.encode(ENCODING)
-        b64 = base64.b64encode(self._get_hashing_method()(data).digest()).decode(ENCODING)
+        b64 = base64.b64encode(self._hashing_method(data).digest()).decode(ENCODING)
         return '\n'.join(textwrap.wrap(b64, CHUNK_SIZE))
 
     @staticmethod
@@ -242,4 +245,6 @@ class ChefSession(Session):
         send_kwargs.update(settings)
         prep = self._authenticate_request(prep)  # we are hijacking and enriching our request here before sending.
         resp = self.send(prep, **send_kwargs)
+        if resp.status_code == 401:
+            raise InvalidAuthentication
         return resp

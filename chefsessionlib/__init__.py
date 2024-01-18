@@ -28,6 +28,7 @@ Import all parts from chefsessionlib here
 from ._version import __version__
 from .chefsessionlib import ChefSession
 from .chefsessionlibexceptions import (InvalidPrivateKey,
+                                       InvalidAuthentication,
                                        InvalidAuthenticationVersion)
 
 __author__ = 'Costas Tyfoxylos <ctyfoxylos@schubergphilis.com>, Daan de Goede <ddegoede@schubergphilis.com>'
@@ -45,4 +46,5 @@ assert __version__
 assert ChefSession
 
 assert InvalidPrivateKey
+assert  InvalidAuthentication
 assert InvalidAuthenticationVersion
