@@ -26,6 +26,9 @@ Import all parts from chefsessionlib here
    https://google.github.io/styleguide/pyguide.html
 """
 from ._version import __version__
+from .chefsessionlib import ChefSession
+from .chefsessionlibexceptions import (InvalidPrivateKey,
+                                       InvalidAuthenticationVersion)
 
 __author__ = 'Costas Tyfoxylos <ctyfoxylos@schubergphilis.com>, Daan de Goede <ddegoede@schubergphilis.com>'
 __docformat__ = 'google'
@@ -38,3 +41,8 @@ __status__ = 'Development'  # "Prototype", "Development", "Production".
 
 # This is to 'use' the module(s), so lint doesn't complain
 assert __version__
+
+assert ChefSession
+
+assert InvalidPrivateKey
+assert InvalidAuthenticationVersion

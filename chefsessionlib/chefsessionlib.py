@@ -36,7 +36,7 @@ import rsa
 from requests import Request, Session
 from rsa import transform
 
-from chefsessionlibexceptions import InvalidPrivateKey, InvalidAuthenticationVersion
+from .chefsessionlibexceptions import InvalidPrivateKey, InvalidAuthenticationVersion
 
 __author__ = 'Costas Tyfoxylos <ctyfoxylos@schubergphilis.com>, Daan de Goede <ddegoede@schubergphilis.com>'
 __docformat__ = 'google'
@@ -47,7 +47,6 @@ __license__ = 'Apache Software License 2.0'
 __maintainer__ = 'Costas Tyfoxylos, Daan de Goede'
 __email__ = '<ctyfoxylos@schubergphilis.com>, <ddegoede@schubergphilis.com>'
 __status__ = 'Development'  # "Prototype", "Development", "Production".
-
 
 # This is the main prefix used for logging
 LOGGER_BASENAME = '''chefsessionlib'''
@@ -111,7 +110,8 @@ class ChefSession(Session):
     @authentication_version.setter
     def authentication_version(self, value):
         if value not in VALID_AUTHENTICATION_VERSIONS:
-            raise InvalidAuthenticationVersion(f'authentication version {value} is not in supported versions: {", ".join(VALID_AUTHENTICATION_VERSIONS)}!')
+            raise InvalidAuthenticationVersion(
+                f'authentication version {value} is not in supported versions: {", ".join(VALID_AUTHENTICATION_VERSIONS)}!')
         self._authentication_version = value
 
     def _update_with_default_headers(self, user_agent):
@@ -126,7 +126,7 @@ class ChefSession(Session):
         try:
             key = rsa.PrivateKey.load_pkcs1(contents)
         except Exception:
-            raise InvalidPrivateKey(f'Something went wrong with importing PEM file {contents}!')
+            raise InvalidPrivateKey('Something went wrong with importing PEM file!')
         return key
 
     @property
