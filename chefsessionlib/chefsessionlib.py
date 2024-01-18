@@ -404,5 +404,5 @@ class ChefSession(Session):
         prep = self._authenticate_request(prep)  # we are hijacking and enriching our request here before sending.
         resp = self.send(prep, **send_kwargs)
         if resp.status_code == 401:
-            raise InvalidAuthentication
+            raise InvalidAuthentication(resp.text)
         return resp
