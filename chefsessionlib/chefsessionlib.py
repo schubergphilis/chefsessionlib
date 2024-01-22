@@ -80,7 +80,7 @@ class ChefSession(Session):
         self.server_version = client_version
         self.authentication_version = authentication_version
         self.api_version = api_version
-        self._private_key = self._validate_private_key(private_key_contents)
+        self._private_key = self._validate_private_key(private_key_contents.encode(ENCODING))
         self._update_with_default_headers(user_agent)
 
     @property
