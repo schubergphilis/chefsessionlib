@@ -38,5 +38,8 @@ To use chefsessionlib in a project:
 
 .. code-block:: python
 
-    from chefsessionlib import Chefsessionlib
-    chefsessionlib = Chefsessionlib()
+    from chefsessionlib import ChefSession
+    username = 'dummy_user'
+    private_key_contents = 'Private RSA Key contents here...'
+    session = ChefSession(username, private_key_contents)
+    response = session.get('some url from chef server')
