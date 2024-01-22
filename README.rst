@@ -13,10 +13,10 @@ A requests Session compatible library that implements Chef server authentication
 Project Features
 ================
 
-* Supports transparent authentication mechanism compatible with requests Session object from authentication versions:
-    1.0
-    1.1
-    1.3
+* Supports Chef Server authentication versions:
+    - 1.0
+    - 1.1
+    - 1.3
 
 
 
