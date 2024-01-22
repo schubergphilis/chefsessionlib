@@ -6,6 +6,7 @@ Development Lead
 ----------------
 
 * Costas Tyfoxylos <ctyfoxylos@schubergphilis.com>
+* Daan de Goede <ddegoede@schubergphilis.com>
 
 Contributors
 ------------

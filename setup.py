@@ -30,8 +30,8 @@ setup(
     version=version,
     description='''A requests Session compatible library that implements Chef server authentication transparently on the requests.''',
     long_description=readme + '\n\n' + history,
-    author='''Costas Tyfoxylos''',
-    author_email='''ctyfoxylos@schubergphilis.com''',
+    author='''Costas Tyfoxylos, Daan de Goede''',
+    author_email='''ctyfoxylos@schubergphilis.com,  ddegoede@schubergphilis.com''',
     url='''https://github.com/schubergphilis/chefsessionlib.git''',
     packages=find_packages(where='.', exclude=('tests', 'hooks', '_CI*')),
     package_dir={'''chefsessionlib''':
@@ -40,7 +40,7 @@ setup(
     install_requires=requirements,
     license='Apache Software License 2.0',
     zip_safe=False,
-    keywords='''chefsessionlib chef authentication requests session''',
+    keywords='''chefsessionlib, chef authentication, requests session''',
     classifiers=[
         'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',
