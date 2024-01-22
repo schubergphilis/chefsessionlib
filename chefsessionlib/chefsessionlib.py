@@ -35,7 +35,7 @@ from typing import Union, Dict
 
 import requests
 import rsa
-from requests import Request, Session
+from requests import Request, Session, PreparedRequest
 from rsa import transform
 
 from .chefsessionlibexceptions import (InvalidPrivateKey,
@@ -68,12 +68,12 @@ class ChefSession(Session):
 
     # pylint: disable=too-many-arguments
     def __init__(self,
-                 user_id,
-                 private_key_contents,
-                 client_version='12.0.2',
-                 authentication_version='1.0',
-                 api_version=1,
-                 user_agent=USER_AGENT):
+                 user_id: str,
+                 private_key_contents: str,
+                 client_version: str = '12.0.2',
+                 authentication_version: str = '1.0',
+                 api_version: int = 1,
+                 user_agent: str = USER_AGENT):
         super().__init__()
         self._logger = logging.getLogger(f'{LOGGER_BASENAME}.{self.__class__.__name__}')
         self._user_id = user_id
@@ -224,7 +224,7 @@ class ChefSession(Session):
         return datetime.datetime.utcnow().strftime(datetime_format)
 
     @staticmethod
-    def canonical_path(path) -> str:
+    def canonical_path(path: str) -> str:
         """Enforces the rules for the canonical path.
 
         The rules of the canonical path are:
@@ -260,7 +260,7 @@ class ChefSession(Session):
             return sign_header
         return f'algorithm={self.hashing_method};{sign_header}'
 
-    def _get_chef_request(self, method, path, hashed_body, timestamp) -> bytes:
+    def _get_chef_request(self, method: str, path: str, hashed_body: str, timestamp: str) -> bytes:
         r"""Calculates a '\n' concatenated byte string of the appropriate headers based on the authentication version.
 
         Args:
@@ -295,7 +295,18 @@ class ChefSession(Session):
                            f'constructed headers: "{headers}"')
         return '\n'.join([f'{key}:{value}' for key, value in headers.items()]).encode()
 
-    def _get_signed_headers(self, chef_request) -> Dict:
+    def _sign(self, data: bytes) -> bytes:
+        signed = b''
+        if self.authentication_version in ['1.0', '1.1']:
+            padded = rsa.pkcs1._pad_for_signing(data, 256)  # noqa
+            payload = transform.bytes2int(padded)
+            encrypted = self._private_key.blinded_encrypt(payload)
+            signed = transform.int2bytes(encrypted, 256)
+        if self.authentication_version == '1.3':
+            signed = rsa.sign(data, self._private_key, 'SHA-256')
+        return signed
+
+    def _get_signed_headers(self, chef_request: bytes) -> Dict:
         """Signs the constructed headers according to the authentication version used.
 
         Args:
@@ -305,14 +316,7 @@ class ChefSession(Session):
             A dictionary of indexed authorization headers with the parts of the signature.
 
         """
-        signed = ''
-        if self.authentication_version in ['1.0', '1.1']:
-            padded = rsa.pkcs1._pad_for_signing(chef_request, 256)  # noqa
-            payload = transform.bytes2int(padded)
-            encrypted = self._private_key.blinded_encrypt(payload)
-            signed = transform.int2bytes(encrypted, 256)
-        if self.authentication_version == '1.3':
-            signed = rsa.sign(chef_request, self._private_key, 'SHA-256')
+        signed = self._sign(chef_request)
         signed_b64 = base64.b64encode(signed).decode()
         self._logger.debug(f'Authentication version is set to {self.authentication_version}, '
                            f'\n\tsigned payload calculated: "{signed}"\n\t'
@@ -322,17 +326,17 @@ class ChefSession(Session):
         self._logger.debug(f'Constructed authenticated headers: "{headers}"')
         return headers
 
-    def _authenticate_request(self, request) -> Request:
+    def _authenticate_request(self, request: PreparedRequest, timestamp: str) -> Request:
         """Intercepted request of the session that gets enriched with the authentication mechanism.
 
         Args:
             request: The request of the user.
+            timestamp: The timestamp of the request in the appropriate format.
 
         Returns:
             The enriched request with the authentication according to the version set.
 
         """
-        timestamp = self.get_current_timestamp()
         body = self._digest_and_encode(request.body or '')
         chef_request = self._get_chef_request(request.method,
                                               request.path_url,
@@ -374,7 +378,8 @@ class ChefSession(Session):
         # Send the request.
         send_kwargs = {"timeout": timeout, "allow_redirects": allow_redirects, }
         send_kwargs.update(settings)
-        prep = self._authenticate_request(prep)  # we are hijacking and enriching our request here before sending.
+        # we are hijacking and enriching our request here before sending.
+        prep = self._authenticate_request(prep, self.get_current_timestamp())
         resp = self.send(prep, **send_kwargs)
         if resp.status_code == 401:
             raise InvalidAuthentication(resp.text)
