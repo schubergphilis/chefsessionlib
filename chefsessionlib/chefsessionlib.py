@@ -326,7 +326,7 @@ class ChefSession(Session):
         self._logger.debug(f'Constructed authenticated headers: "{headers}"')
         return headers
 
-    def _authenticate_request(self, request: PreparedRequest, timestamp: str) -> Request:
+    def _authenticate_request(self, request: PreparedRequest, timestamp: str) -> PreparedRequest:
         """Intercepted request of the session that gets enriched with the authentication mechanism.
 
         Args:
