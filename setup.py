@@ -40,7 +40,7 @@ setup(
     install_requires=requirements,
     license='Apache Software License 2.0',
     zip_safe=False,
-    keywords='''chefsessionlib chef authentication requests session''',
+    keywords='''chefsessionlib, chef authentication, requests session''',
     classifiers=[
         'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',
