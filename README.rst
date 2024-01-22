@@ -8,6 +8,18 @@ A requests Session compatible library that implements Chef server authentication
 * Documentation: https://chefsessionlib.readthedocs.org/en/latest
 
 
+
+
+Project Features
+================
+
+* Supports transparent authentication mechanism compatible with requests Session object from authentication versions:
+    1.0
+    1.1
+    1.3
+
+
+
 Development Workflow
 ====================
 
@@ -59,10 +71,3 @@ So when building a package out of this **do not** simple call
 
 **as this will produce an unusable artifact with files missing.**
 Instead use the provided build and upload scripts that create all the necessary files in the artifact.
-
-
-
-Project Features
-================
-
-* TODO
