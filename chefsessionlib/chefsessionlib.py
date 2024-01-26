@@ -277,9 +277,10 @@ class ChefSession(Session):
         # the following headers dict requires to be an ordered dict (python >= 3.7)
         # as the dict is signed. So the order of the keys cannot be changed.
         # See https://docs.chef.io/server/api_chef_server/#authentication-headers
+        path = self.canonical_path(path)
         if self.authentication_version in ['1.0', '1.1']:
             headers = {'Method': method,
-                       'Hashed Path': self._digest_and_encode(self.canonical_path(path)),
+                       'Hashed Path': self._digest_and_encode(path),
                        'X-Ops-Content-Hash': hashed_body,
                        'X-Ops-Timestamp': timestamp,
                        'X-Ops-UserId': self.canonical_user_id}
