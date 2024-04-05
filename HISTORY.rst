@@ -13,3 +13,9 @@ History
 ------------------
 
 * Initial release.
+
+
+0.1.1 (05-04-2024)
+------------------
+
+* Fix license classifier.
